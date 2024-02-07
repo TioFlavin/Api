@@ -7,10 +7,14 @@
     }
   ],
   "routes": [
-    { "handle": "vercel.php", "src": "/(.*)" }
+    {
+      "src": "/extrair-informacoes",
+      "dest": "/index.php"
+    }
   ],
   "env": {
     "VERCEL_GITHUB_REPO": "seu-usuario/seu-repositorio",
     "VERCEL_GITHUB_COMMIT_REF": "main"
   }
 }
+
