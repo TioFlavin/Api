@@ -1,14 +1,14 @@
 {
   "version": 2,
   "functions": {
-    "Api/index.php": {
+    "index.php": {
       "runtime": "@vercel/php"
     }
   },
   "routes": [
     {
       "src": "/extrair-informacoes",
-      "dest": "/Api/index.php"
+      "dest": "index.php"
     }
   ]
 }
