@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "/index.php",
+      "use": "@vercel/php"
+    }
+  ],
+  "routes": [
+    { "handle": "vercel.php", "src": "/(.*)" }
+  ],
+  "env": {
+    "VERCEL_GITHUB_REPO": "seu-usuario/seu-repositorio",
+    "VERCEL_GITHUB_COMMIT_REF": "main"
+  }
+}
