@@ -3,7 +3,7 @@
   "builds": [
     {
       "src": "/index.php",
-      "use": "@vercel/php"
+      "use": "@now/php"
     }
   ],
   "routes": [
@@ -17,4 +17,3 @@
     "VERCEL_GITHUB_COMMIT_REF": "main"
   }
 }
-
