@@ -1,7 +1,14 @@
 {
+  "version": 2,
   "functions": {
-    "index/*.php": {
-      "runtime": "vercel-php@0.6.1"
+    "Api/index.php": {
+      "runtime": "@vercel/php"
     }
-  }
+  },
+  "routes": [
+    {
+      "src": "/extrair-informacoes",
+      "dest": "/api/index.php"
+    }
+  ]
 }
