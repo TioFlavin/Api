@@ -8,7 +8,7 @@
   "routes": [
     {
       "src": "/extrair-informacoes",
-      "dest": "api/index.php"
+      "dest": "/api/index.php"
     }
   ]
 }
