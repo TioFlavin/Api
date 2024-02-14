@@ -1,57 +1,39 @@
 <?php
-require 'vendor/autoload.php';
 
-use Slim\Factory\AppFactory;
+// Verifica se a requisição é do tipo POST
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Recebe os dados do POST
+    $novoItem = array(
+        'tvg-name' => $_POST['Título'],
+        'tvg-logo' => $_POST['logo'],
+        'group-title' => $_POST['categoria'],
+        'url' => $_POST['URL'],
+        'senha' => $_POST['senha'],
+    );
 
-// Criar a instância do aplicativo Slim
-$app = AppFactory::create();
+    // Caminho do arquivo JSON
+    $arquivoJSON = 'TioChannels.json';
 
-// Configurar middleware de roteamento
-$app->get('/extrair-informacoes', function ($request, $response) {
-    $url = "https://canaisplay.com/categoria/futebol-ao-vivo/";
+    // Lê o conteúdo do arquivo JSON existente
+    $jsonContent = file_get_contents($arquivoJSON);
 
-    // Usar a função file_get_contents com stream_context_create para evitar erros de SSL
-    $context = stream_context_create(['ssl' => ['verify_peer' => false, 'verify_peer_name' => false]]);
-    $html = file_get_contents($url, false, $context);
+    // Converte o JSON para array PHP
+    $data = json_decode($jsonContent, true);
 
-    $dom = new DOMDocument;
-    @$dom->loadHTML($html);
+    // Adiciona o novo item ao array
+    $data[] = $novoItem;
 
-    $xpath = new DOMXPath($dom);
+    // Converte de volta para JSON com formatação e caracteres Unicode não escapados
+    $jsonNovo = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
 
-    // Encontrar os títulos
-    $titles = $xpath->query('//div[contains(@class, "bg-black")]/a');
-    $titleArray = [];
+    // Escreve o JSON atualizado de volta ao arquivo
+    file_put_contents($arquivoJSON, $jsonNovo);
 
-    foreach ($titles as $title) {
-        $titleArray[] = $title->nodeValue;
-    }
+    // Mensagem de sucesso
+    echo "Item adicionado com sucesso!";
+} else {
+    // Se a requisição não for POST, exibe uma mensagem de erro
+    echo "Acesso negado.";
+}
 
-    // Encontrar os URLs
-    $urls = $xpath->query('//div[contains(@class, "bg-black")]/a/@href');
-    $urlArray = [];
-
-    foreach ($urls as $url) {
-        $urlArray[] = $url->nodeValue;
-    }
-
-    $result = [];
-
-    for ($i = 0; $i < count($titleArray); $i++) {
-        $result[] = [
-            'title' => $titleArray[$i],
-            'url' => $urlArray[$i],
-        ];
-    }
-
-    // Configurar o cabeçalho Content-Type para JSON
-    $response = $response->withHeader('Content-Type', 'application/json');
-
-    // Retornar uma resposta JSON
-    $response->getBody()->write(json_encode($result));
-
-    return $response;
-});
-
-// Executar o aplicativo Slim
-$app->run();
+?>
