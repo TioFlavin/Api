@@ -37,7 +37,7 @@ def login():
     # Verifica se já existe um token válido para esse IP
     existing_token = get_existing_token(ip_address)
     if existing_token:
-        return jsonify({'message': 'Token already exists for this IP', 'token': existing_token})
+        return jsonify({'message': 'O token já existe para este IP', 'token': existing_token})
     
     # Gera um novo token com expiração de 7 dias
     token = jwt.encode({
@@ -59,7 +59,7 @@ def get_time_left():
     # Verifica se já existe um token válido para esse IP
     token = get_existing_token(ip_address)
     if not token:
-        return jsonify({'message': 'No valid token for this IP'}), 403
+        return jsonify({'message': 'Nenhum token válido para este IP'}), 403
 
     # Decodifica o token para obter a data de expiração
     try:
@@ -72,9 +72,44 @@ def get_time_left():
         
         return jsonify({'expires_at': exp_date_formatted})
     except jwt.ExpiredSignatureError:
-        return jsonify({'message': 'Token has expired!'}), 403
+        return jsonify({'message': 'O token expirou!'}), 403
     except Exception as e:
         return jsonify({'message': 'Invalid token!'}), 403
+        
+        
+# Rota para verificar e buscar dados da página
+@app.route('/api/teste', methods=['GET'])
+def get_page():
+    # Obtém o ID da página da query string (?page=id_da_pagina)
+    page_id = request.args.get('page', default=1, type=int)
+    
+    # Obtém o token da query string (?token=seu_token)
+    token = request.args.get('token')
+
+    if not token or not validate_token(token):
+        return jsonify({'error': 'Token is invalid or missing'}), 403
+
+    # URL base da requisição
+    base_url = "http://appservidor.erremepe.com:80/ajax/appv/appv2_2_0_10.php"
+    
+    # Parâmetros da URL
+    params = {
+        'v': '9.9.95',
+        'tipo': 'categoria',
+        'nome': 'destaques',
+        'pagina': page_id,
+        'hwid': 'null'
+    }
+
+    # Faz a requisição HTTP para o servidor externo
+    response = requests.get(base_url, params=params)
+    
+    # Verifica se a requisição foi bem-sucedida
+    if response.status_code == 200:
+        return jsonify(response.json())
+    else:
+        return jsonify({"error": "Failed to fetch data"}), response.status_code
+        
 
 if __name__ == '__main__':
     app.run(debug=True)
