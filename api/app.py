@@ -30,7 +30,7 @@ def token_required(f):
     return decorated
 
 # Rota para gerar um novo token que expira em 7 dias
-@app.route('/login', methods=['GET'])
+@app.route('/api/login', methods=['GET'])
 def login():
     # Gera um token com expiração de 7 dias
     token = jwt.encode({
@@ -41,7 +41,7 @@ def login():
     return jsonify({'token': token})
 
 # Rota para verificar a data e hora de expiração do token
-@app.route('/timer', methods=['GET'])
+@app.route('/api/timer', methods=['GET'])
 @token_required
 def get_time_left():
     token = request.args.get('token')
