@@ -1,4 +1,5 @@
 from flask import Flask, jsonify, request
+import requests
 import jwt
 import datetime
 
@@ -25,8 +26,20 @@ def get_existing_token(ip_address):
         except Exception as e:
             # Qualquer outro erro invalida o token
             del tokens_by_ip[ip_address]
+            print(f"Erro ao decodificar o token: {str(e)}")
             return None
     return None
+
+# Função para validar o token
+def validate_token(token):
+    try:
+        jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
+        return True
+    except jwt.ExpiredSignatureError:
+        return False
+    except Exception as e:
+        print(f"Erro ao validar o token: {str(e)}")
+        return False
 
 # Rota para gerar um novo token que expira em 7 dias, baseado no IP do cliente
 @app.route('/api/login', methods=['GET'])
@@ -75,7 +88,6 @@ def get_time_left():
         return jsonify({'message': 'O token expirou!'}), 403
     except Exception as e:
         return jsonify({'message': 'Invalid token!'}), 403
-        
         
 # Rota para verificar e buscar dados da página
 @app.route('/api/teste', methods=['GET'])
