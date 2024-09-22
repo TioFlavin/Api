@@ -1,31 +1,33 @@
-from flask import Flask, request, jsonify
+from flask import Flask, jsonify
 from googleapiclient.discovery import build
 
 app = Flask(__name__)
 
-YOUTUBE_API_KEY = 'AIzaSyDROWO5FOF3p7JY4Ux58oI8sPsXJfX6jBI'
+API_KEY = 'AIzaSyDROWO5FOF3p7JY4Ux58oI8sPsXJfX6jBI'
+youtube = build('youtube', 'v3', developerKey=API_KEY)
 
-def youtube_search(query):
-    youtube = build('youtube', 'v3', developerKey=YOUTUBE_API_KEY)
-    
+@app.route('/youtube/shots', methods=['GET'])
+def get_youtube_shots():
     request = youtube.search().list(
-        part="snippet",
-        maxResults=50,
-        q=query
+        part='snippet',
+        maxResults=100,
+        q='shorts',
+        type='video',
+        videoDuration='short'
     )
     response = request.execute()
-    return response
-
-@app.route('/pesquisa', methods=['GET'])
-def pesquisa_youtube():
-    query = request.args.get('pesquisa')
     
-    if not query:
-        return jsonify({"error": "Parâmetro 'pesquisa' é obrigatório"}), 400
+    shots = []
+    for item in response.get('items', []):
+        video_id = item['id']['videoId']
+        shots.append({
+            'title': item['snippet']['title'],
+            'videoId': video_id,
+            'link': f'https://www.youtube.com/watch?v={video_id}',  # Link do vídeo
+            'thumbnail': item['snippet']['thumbnails']['default']['url']
+        })
     
-    # Faz a pesquisa no YouTube
-    results = youtube_search(query)
-    return jsonify(results)
+    return jsonify(shots)
 
 if __name__ == '__main__':
     app.run(debug=True)
