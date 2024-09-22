@@ -21,7 +21,7 @@ def get_youtube_shots():
     for item in response.get('items', []):
         video_id = item['id']['videoId']
         shots.append({
-            'title': item['snippet']['title'],
+            'titulo': item['snippet']['title'],
             'videoId': video_id,
             'link': f'https://www.youtube.com/watch?v={video_id}',  # Link do vídeo
             'thumbnail': item['snippet']['thumbnails']['default']['url']
