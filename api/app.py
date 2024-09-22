@@ -13,7 +13,8 @@ def get_youtube_shots():
         maxResults=100,
         q='shorts',
         type='video',
-        videoDuration='short'
+        videoDuration='short',
+        regionCode='BR'  # Filtra para o Brasil
     )
     response = request.execute()
     
