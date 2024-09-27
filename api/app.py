@@ -40,5 +40,27 @@ def get_playlist_videos():
 
     return jsonify(videos)
 
+@app.route('/search', methods=['GET'])
+def search_playlists():
+    query = request.args.get('pesquisa')
+    if not query:
+        return jsonify({'error': 'No search query provided'}), 400
+
+    # Escape special characters for the query string
+    query = requests.utils.quote(query)
+
+    api_url = f'https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=10&type=playlist&q={query}&key={API_KEY}'
+    response = requests.get(api_url)
+    data = response.json()
+
+    playlists = []
+    for item in data.get('items', []):
+        title = item['snippet']['title']
+        playlist_id = item['id']['playlistId']
+        playlist_url = f"https://www.youtube.com/playlist?list={playlist_id}"
+        playlists.append({'title': title, 'url': playlist_url})
+
+    return jsonify(playlists)
+
 if __name__ == '__main__':
     app.run(debug=True)
