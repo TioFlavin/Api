@@ -10,7 +10,7 @@ def extract_playlist_id(url):
     match = re.search(r'list=([a-zA-Z0-9_-]+)', url)
     return match.group(1) if match else None
 
-@app.route('/playlist', methods=['GET'])
+@app.route('/api/playlist', methods=['GET'])
 def get_playlist_videos():
     url = request.args.get('link')
     playlist_id = extract_playlist_id(url)
@@ -40,7 +40,7 @@ def get_playlist_videos():
 
     return jsonify(videos)
 
-@app.route('/search', methods=['GET'])
+@app.route('/api/search', methods=['GET'])
 def search_playlists():
     query = request.args.get('pesquisa')
     if not query:
