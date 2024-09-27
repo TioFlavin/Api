@@ -1,8 +1,6 @@
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify
 import requests
 import re
-from pytube import YouTube
-import os
 
 app = Flask(__name__)
 
@@ -63,33 +61,6 @@ def search_playlists():
         playlists.append({'title': title, 'url': playlist_url})
 
     return jsonify(playlists)
-
-@app.route('/download_audio', methods=['GET'])
-def download_audio():
-    video_url = request.args.get('url')
-    if not video_url:
-        return jsonify({'error': 'No video URL provided'}), 400
-
-    file_path = None
-    try:
-        yt = YouTube(video_url)
-        # Find the first audio-only stream
-        stream = yt.streams.filter(only_audio=True).first()
-        if not stream:
-            return jsonify({'error': 'No audio stream found for this video'}), 404
-
-        # Download the audio stream
-        file_path = stream.download(filename='audio.mp4')  # Save as audio.mp4 or other format
-
-        return send_file(file_path, as_attachment=True, attachment_filename='audio.mp4')
-    except requests.exceptions.RequestException as e:
-        return jsonify({'error': f'Request failed: {str(e)}'}), 500
-    except Exception as e:
-        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
-    finally:
-        # Clean up the downloaded file
-        if file_path and os.path.exists(file_path):
-            os.remove(file_path)
 
 if __name__ == '__main__':
     app.run(debug=True)
