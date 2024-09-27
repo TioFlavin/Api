@@ -70,9 +70,13 @@ def download_audio():
     if not video_url:
         return jsonify({'error': 'No video URL provided'}), 400
 
+    file_path = None
     try:
         yt = YouTube(video_url)
         stream = yt.streams.filter(only_audio=True).first()
+        if not stream:
+            return jsonify({'error': 'No audio stream found for this video'}), 404
+
         file_path = stream.download(filename='audio.mp4')  # Save as audio.mp4 or other format
 
         return send_file(file_path, as_attachment=True, attachment_filename='audio.mp4')
@@ -80,7 +84,7 @@ def download_audio():
         return jsonify({'error': str(e)}), 500
     finally:
         # Clean up the downloaded file
-        if os.path.exists(file_path):
+        if file_path and os.path.exists(file_path):
             os.remove(file_path)
 
 if __name__ == '__main__':
