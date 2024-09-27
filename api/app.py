@@ -73,15 +73,19 @@ def download_audio():
     file_path = None
     try:
         yt = YouTube(video_url)
+        # Find the first audio-only stream
         stream = yt.streams.filter(only_audio=True).first()
         if not stream:
             return jsonify({'error': 'No audio stream found for this video'}), 404
 
+        # Download the audio stream
         file_path = stream.download(filename='audio.mp4')  # Save as audio.mp4 or other format
 
         return send_file(file_path, as_attachment=True, attachment_filename='audio.mp4')
+    except requests.exceptions.RequestException as e:
+        return jsonify({'error': f'Request failed: {str(e)}'}), 500
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
     finally:
         # Clean up the downloaded file
         if file_path and os.path.exists(file_path):
@@ -89,4 +93,3 @@ def download_audio():
 
 if __name__ == '__main__':
     app.run(debug=True)
-    
