@@ -4,7 +4,7 @@ import re
 
 app = Flask(__name__)
 
-API_KEY = 'AIzaSyDROWO5FOF3p7JY4Ux58oI8sPsXJfX6jBI'
+API_KEY = 'AIzaSyABnTF68eNYjJsPV52eWas9_8OmTJFvb3o'
 
 def extract_playlist_id(url):
     match = re.search(r'list=([a-zA-Z0-9_-]+)', url)
