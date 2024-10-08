@@ -1,6 +1,6 @@
 <?php
 
-require 'vendor/autoload.php'; // Certifique-se de ter instalado Simple HTML DOM via Composer
+require 'vendor/autoload.php'; // Certifique-se de que o autoload está correto
 
 use SimpleHtmlDom\HtmlWeb;
 
