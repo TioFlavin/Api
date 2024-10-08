@@ -1,15 +1,10 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "/api/app.py",
-      "use": "@vercel/python"
+  "functions": {
+    "api/api.php": {
+      "runtime": "vercel-php@0.3.1"
     }
-  ],
+  },
   "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/api/app.py"
-    }
+    { "src": "/(.*)", "dest": "/api/api.php" }
   ]
 }
