@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 
-def extrair_animes(num_paginas=23, limite_por_pagina=10):  # Padrão de 23 páginas, 10 animes por página
+def extrair_animes(num_paginas=23, limite_por_pagina=5):  # Padrão de 23 páginas, 10 animes por página
     todos_animes = []
     
     for num in range(1, num_paginas + 1):  # Loop de 1 até o número de páginas (1 a 23)
