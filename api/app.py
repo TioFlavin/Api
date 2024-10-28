@@ -1,14 +1,13 @@
-from flask import Flask, request, jsonify
+from flask import Flask, jsonify, request
 import requests
 from bs4 import BeautifulSoup
-import urllib.parse
 
 app = Flask(__name__)
 
-def extrair_animes():
+def extrair_animes(num_paginas=23, limite_por_pagina=10):  # Padrão de 23 páginas, 10 animes por página
     todos_animes = []
     
-    for num in range(1, 24):  # De 1 até 23
+    for num in range(1, num_paginas + 1):  # Loop de 1 até o número de páginas (1 a 23)
         url = f"https://bakashi.tv/animes/page/{num}/"
         
         try:
@@ -18,7 +17,7 @@ def extrair_animes():
             soup = BeautifulSoup(response.text, 'html.parser')
             
             # Seleciona cada anime individualmente
-            animes = soup.select("div#archive-content article.item.tvshows")
+            animes = soup.select("div#archive-content article.item.tvshows")[:limite_por_pagina]  # Limita a 10 animes por página
             
             for anime in animes:
                 titulo = anime.select_one("h3 a").text.strip() if anime.select_one("h3 a") else None
@@ -42,82 +41,8 @@ def extrair_animes():
 
 @app.route('/todas', methods=['GET'])
 def rota_todas():
-    animes = extrair_animes()
+    animes = extrair_animes(num_paginas=23, limite_por_pagina=10)  # Define o limite de páginas e animes por página
     return jsonify({"animes": animes})
-
-def extrair_iframes_e_players(url, apenas_principal=False):
-    try:
-        # Requisição à página alvo
-        response = requests.get(url)
-        response.raise_for_status()
-        
-        # Faz o parsing do conteúdo HTML com BeautifulSoup
-        soup = BeautifulSoup(response.text, 'html.parser')
-        
-        # Localiza todos os iframes
-        iframes = soup.select("div.dooplay_player div.source-box div.pframe iframe")
-        iframe_links = []
-        
-        for iframe in iframes:
-            if 'src' in iframe.attrs:
-                src_url = iframe['src']
-                # Remove o prefixo e decodifica a URL
-                if src_url.startswith("https://bakashi.tv/aviso/?url="):
-                    src_url = src_url.replace("https://bakashi.tv/aviso/?url=", "")
-                    src_url = urllib.parse.unquote(src_url)
-                iframe_links.append(src_url)
-        
-        # Localiza todos os nomes dos players
-        player_options = soup.select("ul#playeroptionsul li.dooplay_player_option")
-        players = [
-            {
-                "name": option.select_one("span.title").text,
-                "quality": option.select_one("span.flag img")["src"] if option.select_one("span.flag img") else None
-            }
-            for option in player_options
-        ]
-
-        # Associa os iframes com os players conforme a ordem
-        players_with_iframes = []
-        for i, (player, iframe_link) in enumerate(zip(players, iframe_links)):
-            players_with_iframes.append({
-                "order": i + 1,  # Ordem do player
-                "name": player["name"],
-                "quality": player["quality"],
-                "iframe": iframe_link
-            })
-
-        # Retorna apenas o primeiro player para a rota principal
-        if apenas_principal and players_with_iframes:
-            return [players_with_iframes[4]]
-
-        return players_with_iframes
-
-    except requests.exceptions.RequestException as e:
-        return {"error": str(e)}
-    except Exception as e:
-        return {"error": "Erro ao processar a página"}
-
-@app.route('/principal', methods=['GET'])
-def rota_principal():
-    url = request.args.get('url')
-    if not url:
-        return jsonify({"error": "URL não fornecida"}), 400
-
-    resultado = extrair_iframes_e_players(url, apenas_principal=True)
-    return jsonify({"players": resultado})
-
-@app.route('/todos', methods=['GET'])
-def rota_todos():
-    url = request.args.get('url')
-    if not url:
-        return jsonify({"error": "URL não fornecida"}), 400
-
-    resultado = extrair_iframes_e_players(url, apenas_principal=False)
-    return jsonify({"players": resultado})
 
 if __name__ == '__main__':
     app.run(debug=True)
-    
-    
-    
