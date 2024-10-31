@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
@@ -44,6 +44,10 @@ def temp_status():
             "segundos": seconds
         }
     })
+
+@app.route('/')
+def index():
+    return render_template('index.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
