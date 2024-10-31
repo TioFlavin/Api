@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contagem Regressiva em Tempo Real</title>
+</head>
+<body>
+    <h1>Contagem Regressiva</h1>
+    <p id="timer">Carregando...</p>
+
+    <script>
+        // Função para buscar o tempo restante da API
+        async function fetchTimeRemaining() {
+            try {
+                // Parâmetros de expiração: ajustados conforme desejado
+                const response = await fetch('/temp?dia=0&hora=0&minuto=1&segundo=30');
+                const data = await response.json();
+
+                if (response.status === 410) {
+                    document.getElementById("timer").innerText = "Expirado";
+                    return;
+                }
+
+                const { dias, horas, minutos, segundos } = data.tempo_restante;
+                document.getElementById("timer").innerText = 
+                    `${dias}d ${horas}h ${minutos}m ${segundos}s`;
+
+            } catch (error) {
+                document.getElementById("timer").innerText = "Erro ao buscar o tempo restante";
+            }
+        }
+
+        // Atualizar o tempo restante a cada segundo
+        setInterval(fetchTimeRemaining, 1000);
+
+        // Carregar o tempo restante assim que a página for aberta
+        fetchTimeRemaining();
+    </script>
+</body>
+</html>
