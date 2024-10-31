@@ -3,3 +3,5 @@ requests==2.31.0
 PyJWT
 beautifulsoup4
 pyTelegramBotAPI
+psycopg2
+Flask-SQLAlchemy
