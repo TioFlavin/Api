@@ -3,8 +3,13 @@ from datetime import datetime, timedelta
 
 app = Flask(__name__)
 
+# Variável para armazenar o tempo de expiração
+expiration_time = None
+
 @app.route('/temp', methods=['GET'])
 def temp_status():
+    global expiration_time
+    
     # Obter os valores dos parâmetros da URL, usando 0 como padrão caso não sejam fornecidos
     try:
         dias = int(request.args.get('dia', 0))         # Parâmetro 'dia' (padrão 0)
@@ -14,8 +19,9 @@ def temp_status():
     except ValueError:
         return jsonify({"error": "Parâmetro inválido"}), 400  # Código HTTP 400 para erro de requisição
     
-    # Configuração do tempo de expiração com base nos parâmetros fornecidos
-    expiration_time = datetime.now() + timedelta(days=dias, hours=horas, minutes=minutos, seconds=segundos)
+    # Se não houver um tempo de expiração definido, configurá-lo com base nos parâmetros fornecidos
+    if expiration_time is None:
+        expiration_time = datetime.now() + timedelta(days=dias, hours=horas, minutes=minutos, seconds=segundos)
     
     # Calcular o tempo restante até expirar
     now = datetime.now()
