@@ -1,42 +1,68 @@
-from flask import Flask, jsonify, request, render_template
+from flask import Flask, jsonify, request
+from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
+import os
 
 app = Flask(__name__)
 
-# Variável para armazenar o tempo de expiração
-expiration_time = None
+# Configurações do banco de dados
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://default:tkOBoc47UaCg@ep-cool-snowflake-790363.us-west-2.aws.neon.tech:5432/verceldb?sslmode=require'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-@app.route('/temp', methods=['GET'])
-def temp_status():
-    global expiration_time
+db = SQLAlchemy(app)
+
+# Definição de um modelo de exemplo
+class Timer(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.String, nullable=False)  # ID do usuário
+    expiration_time = db.Column(db.DateTime, nullable=False)  # Hora de expiração
+
+    def __repr__(self):
+        return f'<Timer {self.id} - User {self.user_id}>'
+
+# Rota para criar um novo timer para um usuário
+@app.route('/add_timer', methods=['POST'])
+def add_timer():
+    data = request.json
+    user_id = data.get('user_id')
     
-    # Obter os valores dos parâmetros da URL, usando 0 como padrão caso não sejam fornecidos
-    try:
-        dias = int(request.args.get('dia', 0))         # Parâmetro 'dia' (padrão 0)
-        horas = int(request.args.get('hora', 0))        # Parâmetro 'hora' (padrão 0)
-        minutos = int(request.args.get('minuto', 0))    # Parâmetro 'minuto' (padrão 0)
-        segundos = int(request.args.get('segundo', 0))  # Parâmetro 'segundo' (padrão 0)
-    except ValueError:
-        return jsonify({"error": "Parâmetro inválido"}), 400  # Código HTTP 400 para erro de requisição
+    # Obter os valores de tempo
+    dias = int(data.get('dias', 0))
+    horas = int(data.get('horas', 0))
+    minutos = int(data.get('minutos', 0))
+    segundos = int(data.get('segundos', 0))
     
-    # Se não houver um tempo de expiração definido, configurá-lo com base nos parâmetros fornecidos
-    if expiration_time is None:
-        expiration_time = datetime.now() + timedelta(days=dias, hours=horas, minutes=minutos, seconds=segundos)
+    # Calcular o tempo de expiração
+    expiration_time = datetime.now() + timedelta(days=dias, hours=horas, minutes=minutos, seconds=segundos)
+    
+    # Criar o novo timer
+    new_timer = Timer(user_id=user_id, expiration_time=expiration_time)
+    db.session.add(new_timer)
+    db.session.commit()
+    
+    return jsonify({"message": "Timer adicionado com sucesso!", "id": new_timer.id}), 201
+
+# Rota para obter o timer de um usuário
+@app.route('/timer/<user_id>', methods=['GET'])
+def get_user_timer(user_id):
+    timer = Timer.query.filter_by(user_id=user_id).first()
+    
+    if timer is None:
+        return jsonify({"message": "Nenhum timer encontrado para este usuário."}), 404
     
     # Calcular o tempo restante até expirar
-    now = datetime.now()
-    time_remaining = expiration_time - now
+    time_remaining = timer.expiration_time - datetime.now()
     
     if time_remaining.total_seconds() <= 0:
         return jsonify({"message": "Expirado"}), 410  # Código HTTP 410 para recurso expirado
-    
+
     # Formatar o tempo restante em dias, horas, minutos e segundos
     days = time_remaining.days
     hours, remainder = divmod(time_remaining.seconds, 3600)
     minutes, seconds = divmod(remainder, 60)
     
     return jsonify({
-        "message": "Ativo",
+        "user_id": user_id,
         "tempo_restante": {
             "dias": days,
             "horas": hours,
@@ -45,9 +71,10 @@ def temp_status():
         }
     })
 
-@app.route('/')
-def index():
-    return render_template('index.html')
+# Rota para inicializar o banco de dados
+@app.before_first_request
+def create_tables():
+    db.create_all()
 
 if __name__ == '__main__':
     app.run(debug=True)
