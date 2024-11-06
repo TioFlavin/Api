@@ -1,11 +1,11 @@
 import sqlite3
 import telebot
 import os
-import time
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from mercadopago import SDK
+from flask import Flask, request
 
-# Configurações
+# Configurações do bot
 API_TOKEN = '7039287159:AAF1RkJJbXOkIXptr1SyCSx6wZ6J95BmonI'  # Substitua pelo seu token
 MAX_FILE_SIZE = 50 * 1024 * 1024  # 50 MB
 db_path = 'loja.db'
@@ -58,6 +58,21 @@ def check_token(usuario_id):
     token = cursor.fetchone()
     return token
 
+# Flask para criar o webhook
+app = Flask(__name__)
+
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    data = request.get_json()
+    bot.process_new_updates([telebot.types.Update.de_json(data)])
+    return '', 200
+
+# Função para configurar o webhook
+def set_webhook():
+    webhook_url = os.getenv("VERCEL_URL") + '/webhook'  # Pega a URL do Vercel automaticamente
+    bot.remove_webhook()
+    bot.set_webhook(url=webhook_url)
+
 # Função para lidar com o comando /start
 @bot.message_handler(commands=['start'])
 def start(message):
@@ -68,7 +83,7 @@ def start(message):
     markup = InlineKeyboardMarkup()
     markup.add(InlineKeyboardButton("Configuração (Token)", callback_data="config"))
     markup.add(InlineKeyboardButton("Produtos", callback_data="produtos"))
-    markup.add(InlineKeyboardButton("Adicionar Produto", callback_data="adicionar_produto"))  # Novo botão para adicionar produto
+    markup.add(InlineKeyboardButton("Adicionar Produto", callback_data="adicionar_produto"))
     bot.send_message(message.chat.id, "Bem-vindo à loja! Selecione uma opção:", reply_markup=markup)
 
 # Função para lidar com a opção "Configuração (Token)"
@@ -192,33 +207,20 @@ def confirmar_pagamento(message, sdk_dono, projeto_id):
                         break
                     time.sleep(15)
             else:
-                bot.send_message(message.chat.id, "Erro ao gerar pagamento. Tente novamente mais tarde.")
+                bot.send_message(message.chat.id, "Erro no pagamento. Tente novamente.")
+        else:
+            bot.send_message(message.chat.id, "Produto não encontrado.")
     else:
         bot.send_message(message.chat.id, "Compra cancelada.")
 
-# Função para ver todos os produtos
-@bot.callback_query_handler(func=lambda call: call.data == 'produtos')
-def view_all_products(call):
-    # Consulta para pegar todos os produtos da tabela 'projetos'
-    cursor.execute("SELECT id, nome, preco FROM projetos")
-    produtos = cursor.fetchall()
+# Função para iniciar o webhook
+def set_webhook():
+    webhook_url = os.getenv("VERCEL_URL") + '/webhook'  # Pega a URL do Vercel automaticamente
+    bot.remove_webhook()
+    bot.set_webhook(url=webhook_url)
 
-    if produtos:
-        # Envia a mensagem inicial com todos os produtos
-        bot.send_message(call.message.chat.id, "Aqui estão todos os produtos:")
-
-        # Envia cada produto em uma mensagem separada
-        for produto in produtos:
-            produto_id, nome, preco = produto
-            markup = InlineKeyboardMarkup()
-            markup.add(InlineKeyboardButton(f"Comprar {nome} por R${preco}", callback_data=f"comprar_{produto_id}"))
-            
-            # Envia a mensagem do produto com o botão de compra
-            bot.send_message(call.message.chat.id, f"Produto: {nome}\nPreço: R${preco}", reply_markup=markup)
-
-    else:
-        # Caso não haja produtos, envia uma mensagem dizendo que não existem produtos
-        bot.send_message(call.message.chat.id, "Não há produtos disponíveis no momento.")
-
-bot.polling()
-                
+# Função principal para rodar o servidor Flask
+if __name__ == '__main__':
+    set_webhook()
+    app.run()
+    
