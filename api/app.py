@@ -83,7 +83,7 @@ def fetch_episode_info(url):
     return episodes_data
 
 # Rota para obter todas as séries com paginação de 1 a 25
-@app.route("/series/", methods=["GET"])
+@app.route("/get_series", methods=["GET"])
 def get_series():
     page_number = request.args.get('page', 1, type=int)
     
