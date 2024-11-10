@@ -4,9 +4,9 @@ import requests
 
 app = Flask(__name__)
 
-# Função para buscar detalhes de uma série a partir de uma URL específica
-def fetch_series_data(series_slug):
-    url = f"https://doramasonline.org/br/series/{series_slug}/"
+# Função para buscar todas as séries de uma página
+def fetch_series_from_page(page_number):
+    url = f"https://doramasonline.org/br/series/page/{page_number}/"
     headers = {"User-Agent": "Mozilla/5.0"}
     
     response = requests.get(url, headers=headers)
@@ -15,44 +15,51 @@ def fetch_series_data(series_slug):
     
     soup = BeautifulSoup(response.text, "html.parser")
     
-    # Extrair as informações da série
-    title_tag = soup.find("h1", class_="title")
-    title = title_tag.get_text(strip=True) if title_tag else "Título não encontrado"
+    series_list = []
+    # Encontrar todos os artigos de série na página
+    articles = soup.find_all("article", class_="item tvshows")
     
-    year_tag = soup.find("span", class_="year")
-    year = year_tag.get_text(strip=True) if year_tag else "Ano não encontrado"
+    for article in articles:
+        title_tag = article.find("h3")
+        title = title_tag.get_text(strip=True) if title_tag else "Título não encontrado"
+        
+        link_tag = title_tag.find("a") if title_tag else None
+        link = link_tag["href"] if link_tag else None
+        
+        image_tag = article.find("div", class_="poster").find("img")
+        image_url = image_tag["src"] if image_tag else None
+        
+        year_tag = article.find("span")
+        year = year_tag.get_text(strip=True) if year_tag else "Ano não encontrado"
+        
+        rating_tag = article.find("div", class_="rating")
+        rating = rating_tag.get_text(strip=True) if rating_tag else "Avaliação não encontrada"
+        
+        # Adicionar os dados da série à lista
+        series_list.append({
+            "title": title,
+            "year": year,
+            "rating": rating,
+            "image_url": image_url,
+            "link": link
+        })
     
-    rating_tag = soup.find("span", class_="rating")
-    rating = rating_tag.get_text(strip=True) if rating_tag else "Avaliação não encontrada"
-    
-    image_tag = soup.find("div", class_="poster").find("img")
-    image_url = image_tag["src"] if image_tag else None
-    
-    description_tag = soup.find("div", class_="description")
-    description = description_tag.get_text(strip=True) if description_tag else "Descrição não encontrada"
-    
-    # Retornar os dados da série
-    return {
-        "title": title,
-        "year": year,
-        "rating": rating,
-        "image_url": image_url,
-        "description": description,
-        "link": url
-    }
+    return series_list
 
-# Rota dinâmica para acessar séries usando o "slug" da série na URL
-@app.route("/series/<string:series_slug>/")
-def get_series_data(series_slug):
-    # Buscar os dados da série do site original
-    series_data = fetch_series_data(series_slug)
-    
-    if not series_data:
-        return jsonify({"error": "Série não encontrada"}), 404
-    
-    # Retornar os dados no formato JSON
-    return jsonify(series_data)
+# Rota para buscar todas as séries de 1 a 25
+@app.route("/all-series/")
+def get_all_series():
+    all_series = []
+    for page_number in range(1, 26):  # Páginas de 1 a 25
+        page_series = fetch_series_from_page(page_number)
+        if page_series:
+            all_series.extend(page_series)  # Adiciona as séries dessa página à lista total
 
-# Executar o aplicativo Flask
+    # Retornar as séries no formato JSON
+    if all_series:
+        return jsonify(all_series)  # Retorna todas as séries em um único JSON
+    else:
+        return jsonify({"error": "Nenhuma série encontrada"}), 404
+
 if __name__ == "__main__":
     app.run(debug=True)
