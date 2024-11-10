@@ -1,7 +1,6 @@
 from flask import Flask, jsonify, request
 from bs4 import BeautifulSoup
 import requests
-import math
 
 app = Flask(__name__)
 
@@ -47,8 +46,8 @@ def fetch_series_from_page(page_number):
     
     return series_list
 
-# Função para buscar as séries de todas as páginas até um limite
-def fetch_all_series(limit=50):
+# Função para buscar todas as séries sem paginação
+def fetch_all_series():
     all_series = []
     page_number = 1
     while True:
@@ -58,38 +57,18 @@ def fetch_all_series(limit=50):
         all_series.extend(page_series)  # Adiciona as séries dessa página à lista total
         page_number += 1
         
-        # Se o número de séries alcançou o limite, interrompe
-        if len(all_series) >= limit:
-            break
-    
-    # Retornar as séries limitadas (50 por página)
+    # Retorna todas as séries encontradas
     return all_series
 
-# Rota para buscar as séries com limite de 50 por página
+# Rota para buscar todas as séries sem paginação
 @app.route("/series/", methods=["GET"])
 def get_series():
-    page = int(request.args.get('page', 1))  # Pega o número da página (default é 1)
-    limit = 50  # Limite de 50 séries por página
+    all_series = fetch_all_series()  # Busca todas as séries
 
-    # Buscar todas as séries até o limite
-    all_series = fetch_all_series(limit * page)
-
-    # Calcular o número total de páginas
-    total_pages = math.ceil(len(all_series) / limit)
-
-    # Calcular o intervalo de séries que será retornado nesta página
-    start_index = (page - 1) * limit
-    end_index = min(start_index + limit, len(all_series))
-
-    # Pegar as séries para a página atual
-    series_for_page = all_series[start_index:end_index]
-
-    # Retornar as séries no formato JSON, com informações sobre a página
+    # Retornar todas as séries no formato JSON
     return jsonify({
-        "page": page,
-        "total_pages": total_pages,
         "total_series": len(all_series),
-        "series": series_for_page
+        "series": all_series
     })
 
 if __name__ == "__main__":
