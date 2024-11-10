@@ -46,7 +46,7 @@ def fetch_series_from_page(page_number):
     
     return series_list
 
-# Rota para buscar as séries com base no número da página
+# Rota para buscar as séries de uma página com base no número da página na URL
 @app.route("/series", methods=["GET"])
 def get_series():
     try:
