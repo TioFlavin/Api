@@ -46,29 +46,23 @@ def fetch_series_from_page(page_number):
     
     return series_list
 
-# Função para buscar todas as séries sem paginação
-def fetch_all_series():
-    all_series = []
-    page_number = 1
-    while True:
-        page_series = fetch_series_from_page(page_number)
-        if not page_series:
-            break
-        all_series.extend(page_series)  # Adiciona as séries dessa página à lista total
-        page_number += 1
-        
-    # Retorna todas as séries encontradas
-    return all_series
-
-# Rota para buscar todas as séries sem paginação
-@app.route("/series/", methods=["GET"])
+# Rota para buscar as séries com base no número da página
+@app.route("/series", methods=["GET"])
 def get_series():
-    all_series = fetch_all_series()  # Busca todas as séries
+    try:
+        page = int(request.args.get('pagina', 1))  # Pega o número da página (default é 1)
+    except ValueError:
+        return jsonify({"error": "O parâmetro 'pagina' deve ser um número válido."}), 400
 
-    # Retornar todas as séries no formato JSON
+    # Buscar as séries da página especificada
+    series = fetch_series_from_page(page)
+
+    if series is None:
+        return jsonify({"error": "Página não encontrada ou problema ao buscar as séries."}), 404
+
+    # Retornar as séries no formato JSON
     return jsonify({
-        "total_series": len(all_series),
-        "series": all_series
+        "series": series
     })
 
 if __name__ == "__main__":
